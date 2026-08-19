@@ -51,3 +51,21 @@ package.jsonは、プロジェクトで使用するライブラリやそのバ�
 今回作成するmemo-apiでは、HonoやTypeScript、Vitestなどの
 使用するパッケージや、開発・ビルド・テストを実行するための
 npm-scriptsをpackage.jsonに定義している。
+
+## ５. dependenciesとdevDependenciesの違い
+
+dependenciesは本番環境で実行するために必要なパッケージや依存関係を
+保有し、devDependenciesは開発時のみに必要なパッケージや依存関係を
+保有する。
+
+開発時にはdependenciesとdevDependenciesの両方がインストールされる。
+一方、本番環境では設定によってdevDependenciesをインストール対象から
+除外することができるため、本番環境に不要なパッケージを持ち込まず、
+インストールするパッケージ数や容量を抑えることができる。
+
+今回のmemo-apiでは、WebフレームワークであるHonoは実際にAPIサーバーを
+動かすために必要なのでdependenciesに配置している。
+
+一方、@types/node（型定義ファイルのパッケージ）やVitest（テスト
+フレームワーク）、TypeScriptなど、開発時に必要なパッケージは
+devDependenciesに配置している。
