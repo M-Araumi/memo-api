@@ -28,3 +28,14 @@ Node.jsを利用することで、WebサーバーやAPIの構築、
 
 今回作成するmemo-apiでは、ブラウザではなくNode.js上でJavaScriptを実行し、
 Honoを利用してAPIサーバーを構築する。
+
+## 3. npmの役割
+
+npm（Node Package Manager）は、JavaScriptのパッケージ（ツールやライブラリなど）
+を管理するためのツールである。
+
+npmを利用することで、必要なパッケージを簡単にインストールでき、
+パッケージの依存関係やバージョンを管理することができる。
+
+今回作成するmemo-apiでは、npmを利用してHonoやTypeScript、Vitest、
+tsxなどのパッケージをインストールし、開発環境を構築している。
