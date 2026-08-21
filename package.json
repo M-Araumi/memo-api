@@ -23,6 +23,7 @@
   },
   "homepage": "https://github.com/M-Araumi/memo-api#readme",
   "dependencies": {
+    "@hono/node-server": "^2.1.1",
     "hono": "^4.13.2"
   },
   "devDependencies": {
