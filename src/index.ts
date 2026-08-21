@@ -2,6 +2,11 @@ import { Hono } from "hono";
 import { memos } from "./data/memos.js";
 import { serve } from "@hono/node-server";
 
+type CreateMemoRequest = {
+  title: string;
+  memoText: string;
+};
+
 const app = new Hono();
 
 app.get("/health", (c) => {
@@ -30,6 +35,80 @@ app.get("/memos/:id", (c) => {
   }
 
   return c.json(memo);
+});
+
+app.post("/memos", async (c) => {
+  const body = await c.req.json<CreateMemoRequest>();
+
+  if (!body.title) {
+    return c.json(
+      {
+        error: {
+          code: "MEMO_NOT_TITLE",
+          message: "タイトルを入力してください",
+        },
+      },
+      400,
+    );
+  }
+
+  if (!body.memoText) {
+   return c.json(
+     {
+       error: {
+         code: "MEMO_NOT_TEXT",
+         message: "本文を入力してください",
+       },
+     },
+     400,
+   );
+  }
+
+  if (!body.title.trim()) {
+    return c.json(
+      {
+        error: {
+          code: "MEMO_NOT_TITLE",
+          message: "タイトルを入力してください",
+        },
+      },
+      400,
+    );
+  }
+
+  if (body.title.length > 40) {
+    return c.json(
+      {
+        error: {
+          code: "MEMO_TITLE_40WORD_OVER",
+          message: "タイトルは４０文字以内にしてください",
+        },
+      },
+      400,
+    );
+  }
+
+  if (body.memoText.length > 250) {
+    return c.json(
+      {
+        error: {
+          code: "MEMO_TEXT_250WORD_OVER",
+          message: "メモ本文は２５０文字以内にしてください",
+        },
+      },
+      400,
+    );
+  }
+
+  const newMemo = {
+    id: crypto.randomUUID(),
+    title: body.title,
+    memoText: body.memoText,
+  };
+
+  memos.push(newMemo);
+
+  return c.json(newMemo, 201);
 });
 
 serve({
