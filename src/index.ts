@@ -181,6 +181,28 @@ app.patch("/memos/:id", async (c) => {
   return c.json(memo);
 });
 
+app.delete("/memos/:id", (c) => {
+  const id = c.req.param("id");
+
+  const memoIndex = memos.findIndex((memo) => memo.id === id);
+
+  if (memoIndex === -1) {
+    return c.json(
+      {
+        error: {
+          code: "MEMO_NOT_FOUND",
+          message: "指定したメモが見つかりません",
+        },
+      },
+      404,
+    );
+  }
+
+  memos.splice(memoIndex, 1);
+
+  return c.body(null, 204);
+});
+
 serve({
   fetch: app.fetch,
   port: 3000,
