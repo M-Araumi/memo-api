@@ -2,6 +2,8 @@ import { Hono } from "hono";
 import { memos } from "./data/memos.js";
 import { serve } from "@hono/node-server";
 
+import database from "./db/database.js";
+
 type CreateMemoRequest = {
   title: string;
   memoText: string;
