@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { memos } from "./data/memos.js";
 import { serve } from "@hono/node-server";
-import { getMemos,getMemoById } from "./db/memoSql.js";
+import { getMemos,getMemoById ,createMemo } from "./db/memoSql.js";
 
 import database from "./db/database.js";
 
@@ -108,14 +108,26 @@ app.post("/memos", async (c) => {
       400,
     );
   }
-
+  const now = new Date();
+  const created_at =
+  `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")} ` +
+  `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:${String(now.getSeconds()).padStart(2, "0")}`;
+  
   const newMemo = {
     id: crypto.randomUUID(),
     title: body.title,
     memoText: body.memoText,
+    created_at,
+    updated_at: created_at
   };
 
-  memos.push(newMemo);
+  createMemo(
+    newMemo.id,
+    newMemo.title,
+    newMemo.memoText,
+    created_at,
+    newMemo.updated_at
+  );
 
   return c.json(newMemo, 201);
 });
