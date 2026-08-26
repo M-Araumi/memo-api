@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { memos } from "./data/memos.js";
 import { serve } from "@hono/node-server";
+import { getMemos,getMemoById } from "./db/memoSql.js";
 
 import database from "./db/database.js";
 
@@ -21,13 +22,14 @@ app.get("/health", (c) => {
 });
 
 app.get("/memos", (c) => {
+  const memos = getMemos();
   return c.json(memos);
 });
 
 app.get("/memos/:id", (c) => {
   const id = c.req.param("id");
 
-  const memo = memos.find((memo) => memo.id === id);
+  const memo = getMemoById(id);
 
   if (!memo) {
     return c.json(
