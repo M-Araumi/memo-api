@@ -62,3 +62,12 @@ export function updatedMemo(
 
   statement.run(title, memoText, updatedAt, id)
 }
+
+export function deleteMemo(id: string){
+  const statement = database.prepare(`
+    DELETE FROM memos  
+    WHERE id = ?
+  `);
+
+  statement.run(id)
+}

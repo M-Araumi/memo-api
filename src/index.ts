@@ -1,7 +1,6 @@
 import { Hono } from "hono";
-import { memos } from "./data/memos.js";
 import { serve } from "@hono/node-server";
-import { getMemos,getMemoById ,createMemo, updatedMemo } from "./db/memoSql.js";
+import { getMemos,getMemoById ,createMemo, updatedMemo, deleteMemo } from "./db/memoSql.js";
 
 import database from "./db/database.js";
 
@@ -195,22 +194,41 @@ app.patch("/memos/:id", async (c) => {
   const title = body.title ?? memo.title;
   const memoText = body.memoText ?? memo.memo_text;
 
-  const updated = updatedMemo(
+  updatedMemo(
     id,
     title,
     memoText,
     updated_at
   )
 
-  return c.json(updated);
+const updated = getMemoById(id);
+
+if (!updated) {
+  return c.json(
+    {
+      error: {
+        code: "MEMO_NOT_FOUND",
+        message: "指定したメモが見つかりません",
+      },
+    },
+    404,
+  );
+}
+
+return c.json({
+  id: updated.id,
+  title: updated.title,
+  memoText: updated.memo_text,
+});
+
 });
 
 app.delete("/memos/:id", (c) => {
   const id = c.req.param("id");
 
-  const memoIndex = memos.findIndex((memo) => memo.id === id);
+  const memo = getMemoById(id);
 
-  if (memoIndex === -1) {
+  if (!memo) {
     return c.json(
       {
         error: {
@@ -222,7 +240,7 @@ app.delete("/memos/:id", (c) => {
     );
   }
 
-  memos.splice(memoIndex, 1);
+  deleteMemo(id);
 
   return c.body(null, 204);
 });
