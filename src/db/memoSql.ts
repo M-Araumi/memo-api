@@ -14,7 +14,12 @@ export function getMemos() {
     FROM memos
   `);
 
-  return statement.all();
+  try{
+    return statement.all();
+  }catch(error){
+  console.error(error);
+    throw new Error("メモの取得に失敗しました")
+  };
 }
 
 export function getMemoById(id: string): MemoRecord | undefined {
@@ -24,7 +29,12 @@ export function getMemoById(id: string): MemoRecord | undefined {
     WHERE id = ?
   `);
   
-  return statement.get(id) as MemoRecord | undefined;
+  try{
+    return statement.get(id) as MemoRecord | undefined;
+  }catch(error){
+    console.error(error);
+    throw new Error("メモの取得に失敗しました")
+  };
 }
 
 export function createMemo(
@@ -45,7 +55,12 @@ export function createMemo(
     VALUES (?, ?, ?, ?, ?)
   `);
 
-  statement.run(id, title, memoText, createdAt, updatedAt);
+  try{
+    statement.run(id, title, memoText, createdAt, updatedAt);
+  }catch(error){
+    console.error(error);
+    throw new Error("メモの追加に失敗しました")
+  };
 }
 
 export function updatedMemo(
@@ -60,7 +75,12 @@ export function updatedMemo(
     WHERE id = ?
   `);
 
-  statement.run(title, memoText, updatedAt, id)
+  try{
+    statement.run(title, memoText, updatedAt, id)
+  }catch(error){
+    console.error(error);
+    throw new Error("メモの更新に失敗しました")
+  };
 }
 
 export function deleteMemo(id: string){
@@ -69,5 +89,10 @@ export function deleteMemo(id: string){
     WHERE id = ?
   `);
 
-  statement.run(id)
+  try{
+    statement.run(id)
+  }catch(error){
+    console.error(error);
+    throw new Error("メモの削除に失敗しました")
+  };
 }
