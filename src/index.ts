@@ -2,8 +2,6 @@ import { Hono } from "hono";
 import { serve } from "@hono/node-server";
 import { getMemos,getMemoById ,createMemo, updatedMemo, deleteMemo } from "./db/memoSql.js";
 
-import database from "./db/database.js";
-
 type CreateMemoRequest = {
   title: string;
   memoText: string;
@@ -21,28 +19,52 @@ app.get("/health", (c) => {
 });
 
 app.get("/memos", (c) => {
-  const memos = getMemos();
-  return c.json(memos);
+  try {
+   const memos = getMemos();
+    return c.json(memos);
+  } catch (error) {
+    console.error(error);
+    return c.json(
+      {
+        error: {
+          code: "INTERNAL_SERVER_ERROR",
+          message: "サーバー内部でエラーが発生しました",
+        },
+      },
+      500,
+    );
+  }
 });
 
 app.get("/memos/:id", (c) => {
   const id = c.req.param("id");
 
-  const memo = getMemoById(id);
-
-  if (!memo) {
+  try {
+    const memo = getMemoById(id);
+    if (!memo) {
+      return c.json(
+        {
+          error: {
+            code: "MEMO_NOT_FOUND",
+            message: "指定したメモが見つかりません",
+          },
+        },
+        404,
+      );
+    }
+    return c.json(memo);
+  } catch (error) {
+    console.error(error);
     return c.json(
       {
         error: {
-          code: "MEMO_NOT_FOUND",
-          message: "指定したメモが見つかりません",
+          code: "INTERNAL_SERVER_ERROR",
+          message: "サーバー内部でエラーが発生しました",
         },
       },
-      404,
+      500,
     );
   }
-
-  return c.json(memo);
 });
 
 app.post("/memos", async (c) => {
@@ -120,23 +142,33 @@ app.post("/memos", async (c) => {
     updated_at: created_at
   };
 
-  createMemo(
-    newMemo.id,
-    newMemo.title,
-    newMemo.memoText,
-    created_at,
-    newMemo.updated_at
-  );
-
-  return c.json(newMemo, 201);
+  try {
+    createMemo(
+     newMemo.id,
+     newMemo.title,
+     newMemo.memoText,
+     created_at,
+     newMemo.updated_at
+   );
+    return c.json(newMemo, 201);
+  } catch (error) {
+    console.error(error);
+    return c.json(
+      {
+        error: {
+          code: "INTERNAL_SERVER_ERROR",
+          message: "サーバー内部でエラーが発生しました",
+        },
+      },
+      500,
+    );
+  }
 });
+
 
 app.patch("/memos/:id", async (c) => {
   const id = c.req.param("id");
   const body = await c.req.json<UpdateMemoRequest>();
-
-  const memo = getMemoById(id);
-
   const now = new Date();
   const updated_at =
   `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")} ` +
@@ -179,70 +211,68 @@ app.patch("/memos/:id", async (c) => {
     );
   }
 
-  if (!memo) {
+  try {
+    const memo = getMemoById(id);
+    if (!memo) {
+      return c.json(
+        {
+          error: {
+            code: "MEMO_NOT_FOUND",
+            message: "指定したメモが見つかりません",
+          },
+        },
+        404,
+      );
+    }
+    const title = body.title ?? memo.title;
+    const memoText = body.memoText ?? memo.memo_text;
+    updatedMemo( id, title, memoText, updated_at )
+    return c.json({ id, title, memoText });
+  } catch (error) {
+    console.error(error);
     return c.json(
       {
         error: {
-          code: "MEMO_NOT_FOUND",
-          message: "指定したメモが見つかりません",
+          code: "INTERNAL_SERVER_ERROR",
+          message: "サーバー内部でエラーが発生しました",
         },
       },
-      404,
+      500,
     );
   }
-
-  const title = body.title ?? memo.title;
-  const memoText = body.memoText ?? memo.memo_text;
-
-  updatedMemo(
-    id,
-    title,
-    memoText,
-    updated_at
-  )
-
-const updated = getMemoById(id);
-
-if (!updated) {
-  return c.json(
-    {
-      error: {
-        code: "MEMO_NOT_FOUND",
-        message: "指定したメモが見つかりません",
-      },
-    },
-    404,
-  );
-}
-
-return c.json({
-  id: updated.id,
-  title: updated.title,
-  memoText: updated.memo_text,
-});
-
 });
 
 app.delete("/memos/:id", (c) => {
   const id = c.req.param("id");
 
-  const memo = getMemoById(id);
-
-  if (!memo) {
-    return c.json(
+    try {
+      const memo = getMemoById(id);
+      if (!memo) {
+        return c.json(
+        {
+          error: {
+            code: "MEMO_NOT_FOUND",
+            message: "指定したメモが見つかりません",
+          },
+        },
+          404,
+        );
+      }
+      deleteMemo(id);
+      return c.body(null, 204);
+    } catch (error) {
+      console.error(error);
+      return c.json(
       {
         error: {
-          code: "MEMO_NOT_FOUND",
-          message: "指定したメモが見つかりません",
+        code: "INTERNAL_SERVER_ERROR",
+        message: "サーバー内部でエラーが発生しました",
         },
       },
-      404,
+      500,
     );
   }
 
-  deleteMemo(id);
-
-  return c.body(null, 204);
 });
 
 serve({
