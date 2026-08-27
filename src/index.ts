@@ -1,6 +1,6 @@
 import { Hono } from "hono";
-import { memos } from "./data/memos.js";
 import { serve } from "@hono/node-server";
+import { getMemos,getMemoById ,createMemo, updatedMemo, deleteMemo } from "./db/memoSql.js";
 
 import database from "./db/database.js";
 
@@ -21,13 +21,14 @@ app.get("/health", (c) => {
 });
 
 app.get("/memos", (c) => {
+  const memos = getMemos();
   return c.json(memos);
 });
 
 app.get("/memos/:id", (c) => {
   const id = c.req.param("id");
 
-  const memo = memos.find((memo) => memo.id === id);
+  const memo = getMemoById(id);
 
   if (!memo) {
     return c.json(
@@ -106,14 +107,26 @@ app.post("/memos", async (c) => {
       400,
     );
   }
-
+  const now = new Date();
+  const created_at =
+  `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")} ` +
+  `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:${String(now.getSeconds()).padStart(2, "0")}`;
+  
   const newMemo = {
     id: crypto.randomUUID(),
     title: body.title,
     memoText: body.memoText,
+    created_at,
+    updated_at: created_at
   };
 
-  memos.push(newMemo);
+  createMemo(
+    newMemo.id,
+    newMemo.title,
+    newMemo.memoText,
+    created_at,
+    newMemo.updated_at
+  );
 
   return c.json(newMemo, 201);
 });
@@ -122,7 +135,13 @@ app.patch("/memos/:id", async (c) => {
   const id = c.req.param("id");
   const body = await c.req.json<UpdateMemoRequest>();
 
-  const memo = memos.find((memo) => memo.id === id);
+  const memo = getMemoById(id);
+
+  const now = new Date();
+  const updated_at =
+  `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")} ` +
+  `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:${String(now.getSeconds()).padStart(2, "0")}`;
+
 
   if (body.title !== undefined && body.title.length > 40) {
     return c.json(
@@ -172,23 +191,44 @@ app.patch("/memos/:id", async (c) => {
     );
   }
 
-  if (body.title !== undefined) {
-    memo.title = body.title;
-  }
+  const title = body.title ?? memo.title;
+  const memoText = body.memoText ?? memo.memo_text;
 
-  if (body.memoText !== undefined) {
-    memo.memoText = body.memoText;
-  }
+  updatedMemo(
+    id,
+    title,
+    memoText,
+    updated_at
+  )
 
-  return c.json(memo);
+const updated = getMemoById(id);
+
+if (!updated) {
+  return c.json(
+    {
+      error: {
+        code: "MEMO_NOT_FOUND",
+        message: "指定したメモが見つかりません",
+      },
+    },
+    404,
+  );
+}
+
+return c.json({
+  id: updated.id,
+  title: updated.title,
+  memoText: updated.memo_text,
+});
+
 });
 
 app.delete("/memos/:id", (c) => {
   const id = c.req.param("id");
 
-  const memoIndex = memos.findIndex((memo) => memo.id === id);
+  const memo = getMemoById(id);
 
-  if (memoIndex === -1) {
+  if (!memo) {
     return c.json(
       {
         error: {
@@ -200,7 +240,7 @@ app.delete("/memos/:id", (c) => {
     );
   }
 
-  memos.splice(memoIndex, 1);
+  deleteMemo(id);
 
   return c.body(null, 204);
 });
