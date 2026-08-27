@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { memos } from "./data/memos.js";
 import { serve } from "@hono/node-server";
-import { getMemos,getMemoById ,createMemo } from "./db/memoSql.js";
+import { getMemos,getMemoById ,createMemo, updatedMemo } from "./db/memoSql.js";
 
 import database from "./db/database.js";
 
@@ -136,7 +136,13 @@ app.patch("/memos/:id", async (c) => {
   const id = c.req.param("id");
   const body = await c.req.json<UpdateMemoRequest>();
 
-  const memo = memos.find((memo) => memo.id === id);
+  const memo = getMemoById(id);
+
+  const now = new Date();
+  const updated_at =
+  `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")} ` +
+  `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:${String(now.getSeconds()).padStart(2, "0")}`;
+
 
   if (body.title !== undefined && body.title.length > 40) {
     return c.json(
@@ -186,15 +192,17 @@ app.patch("/memos/:id", async (c) => {
     );
   }
 
-  if (body.title !== undefined) {
-    memo.title = body.title;
-  }
+  const title = body.title ?? memo.title;
+  const memoText = body.memoText ?? memo.memo_text;
 
-  if (body.memoText !== undefined) {
-    memo.memoText = body.memoText;
-  }
+  const updated = updatedMemo(
+    id,
+    title,
+    memoText,
+    updated_at
+  )
 
-  return c.json(memo);
+  return c.json(updated);
 });
 
 app.delete("/memos/:id", (c) => {
