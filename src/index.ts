@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { serve } from "@hono/node-server";
 import { getMemos,getMemoById ,createMemo, updatedMemo, deleteMemo } from "./db/memoSql.js";
+import { validateMemoText, validateMemoTitle } from "./validators/memoValidators.js";
 
 type CreateMemoRequest = {
   title: string;
@@ -70,65 +71,16 @@ app.get("/memos/:id", (c) => {
 app.post("/memos", async (c) => {
   const body = await c.req.json<CreateMemoRequest>();
 
-  if (!body.title) {
-    return c.json(
-      {
-        error: {
-          code: "MEMO_NOT_TITLE",
-          message: "タイトルを入力してください",
-        },
-      },
-      400,
-    );
+  const titleError = validateMemoTitle(body.title);
+  if (titleError) {
+    return c.json({ error: titleError }, 400);
   }
 
-  if (!body.memoText) {
-   return c.json(
-     {
-       error: {
-         code: "MEMO_NOT_TEXT",
-         message: "本文を入力してください",
-       },
-     },
-     400,
-   );
+  const memoTextError = validateMemoText(body.memoText);
+  if (memoTextError) {
+  return c.json({ error: memoTextError }, 400);
   }
 
-  if (!body.title.trim()) {
-    return c.json(
-      {
-        error: {
-          code: "MEMO_NOT_TITLE",
-          message: "タイトルを入力してください",
-        },
-      },
-      400,
-    );
-  }
-
-  if (body.title.length > 40) {
-    return c.json(
-      {
-        error: {
-          code: "MEMO_TITLE_40WORD_OVER",
-          message: "タイトルは４０文字以内にしてください",
-        },
-      },
-      400,
-    );
-  }
-
-  if (body.memoText.length > 250) {
-    return c.json(
-      {
-        error: {
-          code: "MEMO_TEXT_250WORD_OVER",
-          message: "メモ本文は２５０文字以内にしてください",
-        },
-      },
-      400,
-    );
-  }
   const now = new Date();
   const created_at =
   `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")} ` +
@@ -174,31 +126,19 @@ app.patch("/memos/:id", async (c) => {
   `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")} ` +
   `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:${String(now.getSeconds()).padStart(2, "0")}`;
 
-
-  if (body.title !== undefined && body.title.length > 40) {
-    return c.json(
-      {
-        error: {
-          code: "MEMO_TITLE_40WORD_OVER",
-          message: "タイトルは４０文字以内にしてください",
-        },
-      },
-      400,
-    );
+  if (body.title !== undefined) {
+    const titleError = validateMemoTitle(body.title);
+    if (titleError) {
+      return c.json({ error: titleError }, 400);
+    }
   }
 
-  if (body.memoText !== undefined && body.memoText.length > 250) {
-    return c.json(
-      {
-        error: {
-          code: "MEMO_TEXT_250WORD_OVER",
-          message: "メモ本文は２５０文字以内にしてください",
-        },
-      },
-      400,
-    );
+  if (body.memoText !== undefined) {
+    const memoTextError = validateMemoText(body.memoText);
+    if (memoTextError) {
+    return c.json({ error: memoTextError }, 400);
+    }
   }
-
   if (body.title === undefined && body.memoText === undefined) {
     return c.json(
       {
@@ -207,7 +147,7 @@ app.patch("/memos/:id", async (c) => {
           message: "タイトルまたは本文を入力してください",
         },
       },
-      400,
+     400,
     );
   }
 
