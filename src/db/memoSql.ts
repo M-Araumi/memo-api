@@ -1,12 +1,5 @@
 import database from "./database.js";
-
-type MemoRecord = {
-  id: string;
-  title: string;
-  memo_text: string;
-  created_at: string;
-  updated_at: string;
-};
+import type { MemoRecord } from "../types/types.js";
 
 export function getMemos() {
   const statement = database.prepare(`
