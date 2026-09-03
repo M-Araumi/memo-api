@@ -1,9 +1,14 @@
 import { Hono } from "hono";
+import { cors } from "hono/cors";
 import { getMemos,getMemoById ,createMemo, updatedMemo, deleteMemo } from "./db/memoSql.js";
 import { validateMemoText, validateMemoTitle } from "./validators/memoValidators.js";
 import type { CreateMemoRequest, UpdateMemoRequest } from "./types/types.js";
 
 const app = new Hono();
+
+app.use("*", cors({
+  origin: "http://localhost:3001",
+}));
 
 app.get("/health", (c) => {
   return c.json({ status: "ok" });
