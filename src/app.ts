@@ -84,7 +84,7 @@ app.post("/memos", async (c) => {
   const newMemo = {
     id: crypto.randomUUID(),
     title: body.title,
-    memoText: body.memoText,
+    memo_text: body.memoText,
     created_at,
     updated_at: created_at
   };
@@ -93,7 +93,7 @@ app.post("/memos", async (c) => {
     createMemo(
      newMemo.id,
      newMemo.title,
-     newMemo.memoText,
+     newMemo.memo_text,
      created_at,
      newMemo.updated_at
    );
