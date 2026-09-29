@@ -59,7 +59,7 @@ describe("POST /memos", () => {
     const body = await response.json();
 
     expect(body.title).toBe("テスト３");
-    expect(body.memoText).toBe("テスト：メモの新規作成");
+    expect(body.memo_text).toBe("テスト：メモの新規作成");
     expect(body.id).toBeDefined();
   });
 });
@@ -96,7 +96,7 @@ describe("PATCH /memos/:id", () => {
 
     expect(body.id).toBe(createdMemo.id);
     expect(body.title).toBe("テスト４＿更新済み");
-    expect(body.memoText).toBe("テスト：メモの更新＿更新済み");
+    expect(body.memo_text).toBe("テスト：メモの更新＿更新済み");
   });
 });
 
@@ -181,5 +181,138 @@ describe("GET /memos", () => {
     });
 
     vi.restoreAllMocks();
+  });
+});
+
+describe("POST /memos", () => {
+  it("titleが不正な型の場合にエラーを返す", async () => {
+    const response = await app.request("/memos", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        title: 123,
+        memoText: "テスト本文",
+      }),
+    });
+
+    expect(response.status).toBe(400);
+
+    const body = await response.json();
+
+    expect(body.error).toBe("不正な入力です");
+  });
+
+  it("titleがnullの場合にエラーを返す", async () => {
+    const response = await app.request("/memos", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        title: null,
+        memoText: "テスト本文",
+      }),
+    });
+
+    expect(response.status).toBe(400);
+
+    const body = await response.json();
+
+    expect(body.error).toBe("不正な入力です");
+  });
+
+  it("memoTextが不正な型の場合にエラーを返す", async () => {
+    const response = await app.request("/memos", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        title: "テストタイトル",
+        memoText: ["テスト本文"],
+      }),
+    });
+
+    expect(response.status).toBe(400);
+
+    const body = await response.json();
+
+    expect(body.error).toBe("不正な入力です");
+  });
+
+  it("不正なJSONの場合にエラーを返す", async () => {
+    const response = await app.request("/memos", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: '{"title":"テストタイトル","memoText":"テスト本文"',
+    });
+
+    expect(response.status).toBe(400);
+
+    const body = await response.json();
+
+    expect(body.error.code).toBe("INVALID_JSON");
+    expect(body.error.message).toBe("不正なJSONです");
+  });
+});
+
+describe("PATCH /memos/:id", () => {
+  const memoId = "16f2f54-74f5-4a9d-805f-4457e4c85bc2";
+
+  it("titleが不正な型の場合にエラーを返す", async () => {
+    const response = await app.request(`/memos/${memoId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        title: 123,
+      }),
+    });
+
+    expect(response.status).toBe(400);
+
+    const body = await response.json();
+
+    expect(body.error).toBe("不正な入力です");
+  });
+
+  it("memoTextが不正な型の場合にエラーを返す", async () => {
+    const response = await app.request(`/memos/${memoId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        memoText: ["テスト本文"],
+      }),
+    });
+
+    expect(response.status).toBe(400);
+
+    const body = await response.json();
+
+    expect(body.error).toBe("不正な入力です");
+  });
+
+  it("不正なJSONの場合にエラーを返す", async () => {
+    const response = await app.request(`/memos/${memoId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: '{"title":"テストタイトル"',
+    });
+
+    expect(response.status).toBe(400);
+
+    const body = await response.json();
+
+    expect(body.error.code).toBe("INVALID_JSON");
+    expect(body.error.message).toBe("不正なJSONです");
   });
 });

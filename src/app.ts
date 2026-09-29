@@ -2,7 +2,8 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { getMemos,getMemoById ,createMemo, updatedMemo, deleteMemo } from "./db/memoSql.js";
 import { validateMemoText, validateMemoTitle } from "./validators/memoValidators.js";
-import type { CreateMemoRequest, UpdateMemoRequest } from "./types/types.js";
+import { createMemoSchema,updateMemoSchema } from "./schemas/memoSchema.js";
+import type { CreateMemoRequest, UpdateMemoRequest } from "./schemas/memoSchema.js";
 
 const app = new Hono();
 
@@ -64,14 +65,29 @@ app.get("/memos/:id", (c) => {
 });
 
 app.post("/memos", async (c) => {
-  const body = await c.req.json<CreateMemoRequest>();
-
-  const titleError = validateMemoTitle(body.title);
+  let body;
+  try {
+   body = await c.req.json();
+  } catch {
+    return c.json({
+      error:{
+        code: "INVALID_JSON",
+        message: "不正なJSONです",
+      },
+    },400,);
+  }
+  const result = createMemoSchema.safeParse(body);
+  if(!result.success){
+  return c.json({ error: "不正な入力です" }, 400);
+  }
+  const checkedBody = result.data;
+ 
+  const titleError = validateMemoTitle(checkedBody.title);
   if (titleError) {
     return c.json({ error: titleError }, 400);
   }
 
-  const memoTextError = validateMemoText(body.memoText);
+  const memoTextError = validateMemoText(checkedBody.memoText);
   if (memoTextError) {
   return c.json({ error: memoTextError }, 400);
   }
@@ -83,8 +99,8 @@ app.post("/memos", async (c) => {
   
   const newMemo = {
     id: crypto.randomUUID(),
-    title: body.title,
-    memo_text: body.memoText,
+    title: checkedBody.title,
+    memo_text: checkedBody.memoText,
     created_at,
     updated_at: created_at
   };
@@ -115,26 +131,41 @@ app.post("/memos", async (c) => {
 
 app.patch("/memos/:id", async (c) => {
   const id = c.req.param("id");
-  const body = await c.req.json<UpdateMemoRequest>();
+  let body;
+  try {
+   body = await c.req.json();
+  } catch {
+    return c.json({
+      error:{
+        code: "INVALID_JSON",
+        message: "不正なJSONです",
+      },
+    },400,);
+  }
+  const result = updateMemoSchema.safeParse(body);
+  if (!result.success) {
+    return c.json({ error: "不正な入力です" }, 400);
+  }
+  const checkedBody = result.data;
   const now = new Date();
   const updated_at =
   `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")} ` +
   `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:${String(now.getSeconds()).padStart(2, "0")}`;
 
-  if (body.title !== undefined) {
-    const titleError = validateMemoTitle(body.title);
+  if (checkedBody.title !== undefined) {
+    const titleError = validateMemoTitle(checkedBody.title);
     if (titleError) {
       return c.json({ error: titleError }, 400);
     }
   }
 
-  if (body.memoText !== undefined) {
-    const memoTextError = validateMemoText(body.memoText);
+  if (checkedBody.memoText !== undefined) {
+    const memoTextError = validateMemoText(checkedBody.memoText);
     if (memoTextError) {
     return c.json({ error: memoTextError }, 400);
     }
   }
-  if (body.title === undefined && body.memoText === undefined) {
+  if (checkedBody.title === undefined && checkedBody.memoText === undefined) {
     return c.json(
       {
         error: {
@@ -159,8 +190,8 @@ app.patch("/memos/:id", async (c) => {
         404,
       );
     }
-    const title = body.title ?? memo.title;
-    const memo_text = body.memoText ?? memo.memo_text;
+    const title = checkedBody.title ?? memo.title;
+    const memo_text = checkedBody.memoText ?? memo.memo_text;
     updatedMemo( id, title, memo_text, updated_at )
     return c.json({ id, title, memo_text });
   } catch (error) {
