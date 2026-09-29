@@ -160,9 +160,9 @@ app.patch("/memos/:id", async (c) => {
       );
     }
     const title = body.title ?? memo.title;
-    const memoText = body.memoText ?? memo.memo_text;
-    updatedMemo( id, title, memoText, updated_at )
-    return c.json({ id, title, memoText });
+    const memo_text = body.memoText ?? memo.memo_text;
+    updatedMemo( id, title, memo_text, updated_at )
+    return c.json({ id, title, memo_text });
   } catch (error) {
     console.error(error);
     return c.json(
