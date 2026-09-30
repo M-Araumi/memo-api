@@ -1,6 +1,7 @@
 import Database from "better-sqlite3";
 
-const database: Database.Database = new Database("memo.db");
+const databasePath = process.env.DATABASE_PATH ?? "memo.db";
+const database: Database.Database = new Database(databasePath);
 
 database.exec(`
   CREATE TABLE IF NOT EXISTS memos (
